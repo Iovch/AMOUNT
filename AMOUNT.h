@@ -256,49 +256,49 @@ String HexToStr (unsigned long ulpHex, int iDigits)
 int p(void)
 {
  int p=0;
- unsigned uXTimer,uYTimer;
- unsigned long ulStepsNeed;
- double dN=0.0, drDSideral1000;  
- if (P[0]==1) //Проверка наличия моторов
-   {
-    if((P[1]==16)||(P[2]==17)) Serial.print("#"); //Типа версии моторов
-   }
- if (P[0]==2) //Монтировка, фиксированные скорости
-   {
-    switch (P[3]) 
-     {
-      case 1: {dN=1.0;  break;} case 2: {dN=2.0;   break;} case 3: {dN=4.0;   break;}
-      case 4: {dN=8.0;  break;} case 5: {dN=16.0;  break;} case 6: {dN=32.0;  break;}
-      case 7: {dN=64.0; break;} case 8: {dN=100.0; break;} case 9: {dN=200.0; break;}
-      default: dN=0.0;
-     };
-//    if(dN>0) iXYRate=P[3]; //Синхронизация скорости с контроллером управления 
-    if(P[1]==16) //Ось Х
-    {
-     if(((P[2]==36)||(P[2]==37))&&(dN>0))
-     {
-      if(dN>=iXStepX) {if(!bForceX) bForceX=Force_X(true);  ulStepsNeed=dN/iXStepX;} //Переход в полный шаг
-      if(dN <iXStepX) {if( bForceX) bForceX=Force_X(false); ulStepsNeed=dN;}         //Переход в микрошаг
-      if(P[2]==36) {Stepper_X_step( iStDX*ulStepsNeed); p= 1; ulLoopTimer=millis(); ulMilisec=millis();} //По Х вправо
-      if(P[2]==37) {Stepper_X_step(-iStDX*ulStepsNeed); p=-1; ulLoopTimer=millis(); ulMilisec=millis();} //По Х влево
-     }
-     if(P[2]==39) ;                                                                          //Стоп Х
-     if(P[2]==254&&P[6]==2) Serial.print("#"); //Ось Х управляется
-    }
-    if(P[1]==17) //Ось Y
-    {
-     if(((P[2]==36)||(P[2]==37))&&(dN>0))
-     {
-      if(dN>=iYStepX) {if(!bForceY) bForceY=Force_Y(true);  ulStepsNeed=dN/iYStepX;} //Переход в полный шаг
-      if(dN< iYStepX) {if( bForceY) bForceY=Force_Y(false); ulStepsNeed=dN;}         //Переход в микрошаг
-      if(P[2]==36) {Stepper_Y_step( iStDY*ulStepsNeed); p= 2;}   //По Y вверх
-      if(P[2]==37) {Stepper_Y_step(-iStDY*ulStepsNeed); p=-2;}   //По Y вниз
-     } 
-     if(P[2]==39) ; //Стоп У
-     if(P[2]==254&&P[6]==2) Serial.print("#"); //Ось У управляется
-    }
-    if(P[1]==10||P[1]==11) {Serial.print("#"); bPHD2=true; bStellarium=false;} //считаем, что bPHD2 подключен
-   }
+// unsigned uXTimer,uYTimer;
+// unsigned long ulStepsNeed;
+// double dN=0.0, drDSideral1000;  
+// if (P[0]==1) //Проверка наличия моторов
+//   {
+//    if((P[1]==16)||(P[2]==17)) Serial.print("#"); //Типа версии моторов
+//   }
+// if (P[0]==2) //Монтировка, фиксированные скорости
+//   {
+//    switch (P[3]) 
+//     {
+//      case 1: {dN=1.0;  break;} case 2: {dN=2.0;   break;} case 3: {dN=4.0;   break;}
+//      case 4: {dN=8.0;  break;} case 5: {dN=16.0;  break;} case 6: {dN=32.0;  break;}
+//      case 7: {dN=64.0; break;} case 8: {dN=100.0; break;} case 9: {dN=200.0; break;}
+//      default: dN=0.0;
+//     };
+////    if(dN>0) iXYRate=P[3]; //Синхронизация скорости с контроллером управления 
+//    if(P[1]==16) //Ось Х
+//    {
+//     if(((P[2]==36)||(P[2]==37))&&(dN>0))
+//     {
+//      if(dN>=iXStepX) {if(!bForceX) bForceX=Force_X(true);  ulStepsNeed=dN/iXStepX;} //Переход в полный шаг
+//      if(dN <iXStepX) {if( bForceX) bForceX=Force_X(false); ulStepsNeed=dN;}         //Переход в микрошаг
+//      if(P[2]==36) {Stepper_X_step( iStDX*ulStepsNeed); p= 1; ulLoopTimer=millis(); ulMilisec=millis();} //По Х вправо
+//      if(P[2]==37) {Stepper_X_step(-iStDX*ulStepsNeed); p=-1; ulLoopTimer=millis(); ulMilisec=millis();} //По Х влево
+//     }
+//     if(P[2]==39) ;                                                                          //Стоп Х
+//     if(P[2]==254&&P[6]==2) Serial.print("#"); //Ось Х управляется
+//    }
+//    if(P[1]==17) //Ось Y
+//    {
+//     if(((P[2]==36)||(P[2]==37))&&(dN>0))
+//     {
+//      if(dN>=iYStepX) {if(!bForceY) bForceY=Force_Y(true);  ulStepsNeed=dN/iYStepX;} //Переход в полный шаг
+//      if(dN< iYStepX) {if( bForceY) bForceY=Force_Y(false); ulStepsNeed=dN;}         //Переход в микрошаг
+//      if(P[2]==36) {Stepper_Y_step( iStDY*ulStepsNeed); p= 2;}   //По Y вверх
+//      if(P[2]==37) {Stepper_Y_step(-iStDY*ulStepsNeed); p=-2;}   //По Y вниз
+//     } 
+//     if(P[2]==39) ; //Стоп У
+//     if(P[2]==254&&P[6]==2) Serial.print("#"); //Ось У управляется
+//    }
+//    if(P[1]==10||P[1]==11) {Serial.print("#"); bPHD2=true; bStellarium=false;} //считаем, что bPHD2 подключен
+//   }
   if (P[0]==3) //Монтировка, Push (толчки)
    {
     if(P[1]==16) //Ось Х
@@ -312,7 +312,7 @@ int p(void)
      if(P[2]==38&&P[3]==243) {Force_Y(false); Stepper_Y_step(-iStDY*P[4]); p=-2;} //По Y вниз  P[4]*10 ms
     }
    }
-  if (P[0]==4) {P[2]=39; P[3]=0;} //Остановка монтировки
+//  if (P[0]==4) {P[2]=39; P[3]=0;} //Остановка монтировки
 
  return p; 
 }
@@ -539,9 +539,9 @@ unsigned long AskControl()
    }
    if (iCtrlEnable==3) iXYRate=(iN<0)?(-iN):(iN); //JOYCONTROL
    if(iTMode==2) iN=-iN;
-   if(iN!=0) {P[0]=2; P[1]=16; P[2]=(iN>0)?36:37; P[3]=iXYRate; P[4]=0; P[5]=0; P[6]=0; p();} else {P[0]=0; p();} // X
-   if(iN >0) iLastCtrlKey=1;
-   if(iN <0) iLastCtrlKey=2;
+ //  if(iN!=0) {P[0]=2; P[1]=16; P[2]=(iN>0)?36:37; P[3]=iXYRate; P[4]=0; P[5]=0; P[6]=0; p();} else {P[0]=0; p();} // X
+   if(iN >0) {iLastCtrlKey=1; AxisMove("E"+String(iXYRate));}
+   if(iN <0) {iLastCtrlKey=2; AxisMove("W"+String(iXYRate));}
     
   if (iCtrlEnable==0) //GUIDEPORT ось У
    {
@@ -558,9 +558,9 @@ unsigned long AskControl()
     iN=(iA2-iMJY)/iDY;
    }
    if (iCtrlEnable==3) iXYRate=(iN<0)?(-iN):(iN); //JOYCONTROL
-   if(iN!=0) {P[0]=2; P[1]=17; P[2]=(iN>0)?37:36; P[3]=iXYRate; P[4]=0; P[5]=0; P[6]=0; p();} else {P[0]=0; p();} // Y
-   if(iN >0) iLastCtrlKey=3;
-   if(iN <0) iLastCtrlKey=4;
+//   if(iN!=0) {P[0]=2; P[1]=17; P[2]=(iN>0)?37:36; P[3]=iXYRate; P[4]=0; P[5]=0; P[6]=0; p();} else {P[0]=0; p();} // Y
+   if(iN >0) {iLastCtrlKey=3; AxisMove("N"+String(iXYRate));}
+   if(iN <0) {iLastCtrlKey=4; AxisMove("S"+String(iXYRate));}
   
    if((iCtrlEnable==3)&&((millis()-ulCtrlTimer)>iCtrlDelay)) //JOYCONTROL запускает или останавливает трекинг
     {
