@@ -253,68 +253,23 @@ String HexToStr (unsigned long ulpHex, int iDigits)
  return HexStr;
 }
 
-int p(void)
+boolean AxisPush(String sSTR) //Строка типа "PE200" - Push East 200 ms
 {
- int p=0;
-// unsigned uXTimer,uYTimer;
-// unsigned long ulStepsNeed;
-// double dN=0.0, drDSideral1000;  
-// if (P[0]==1) //Проверка наличия моторов
-//   {
-//    if((P[1]==16)||(P[2]==17)) Serial.print("#"); //Типа версии моторов
-//   }
-// if (P[0]==2) //Монтировка, фиксированные скорости
-//   {
-//    switch (P[3]) 
-//     {
-//      case 1: {dN=1.0;  break;} case 2: {dN=2.0;   break;} case 3: {dN=4.0;   break;}
-//      case 4: {dN=8.0;  break;} case 5: {dN=16.0;  break;} case 6: {dN=32.0;  break;}
-//      case 7: {dN=64.0; break;} case 8: {dN=100.0; break;} case 9: {dN=200.0; break;}
-//      default: dN=0.0;
-//     };
-////    if(dN>0) iXYRate=P[3]; //Синхронизация скорости с контроллером управления 
-//    if(P[1]==16) //Ось Х
-//    {
-//     if(((P[2]==36)||(P[2]==37))&&(dN>0))
-//     {
-//      if(dN>=iXStepX) {if(!bForceX) bForceX=Force_X(true);  ulStepsNeed=dN/iXStepX;} //Переход в полный шаг
-//      if(dN <iXStepX) {if( bForceX) bForceX=Force_X(false); ulStepsNeed=dN;}         //Переход в микрошаг
-//      if(P[2]==36) {Stepper_X_step( iStDX*ulStepsNeed); p= 1; ulLoopTimer=millis(); ulMilisec=millis();} //По Х вправо
-//      if(P[2]==37) {Stepper_X_step(-iStDX*ulStepsNeed); p=-1; ulLoopTimer=millis(); ulMilisec=millis();} //По Х влево
-//     }
-//     if(P[2]==39) ;                                                                          //Стоп Х
-//     if(P[2]==254&&P[6]==2) Serial.print("#"); //Ось Х управляется
-//    }
-//    if(P[1]==17) //Ось Y
-//    {
-//     if(((P[2]==36)||(P[2]==37))&&(dN>0))
-//     {
-//      if(dN>=iYStepX) {if(!bForceY) bForceY=Force_Y(true);  ulStepsNeed=dN/iYStepX;} //Переход в полный шаг
-//      if(dN< iYStepX) {if( bForceY) bForceY=Force_Y(false); ulStepsNeed=dN;}         //Переход в микрошаг
-//      if(P[2]==36) {Stepper_Y_step( iStDY*ulStepsNeed); p= 2;}   //По Y вверх
-//      if(P[2]==37) {Stepper_Y_step(-iStDY*ulStepsNeed); p=-2;}   //По Y вниз
-//     } 
-//     if(P[2]==39) ; //Стоп У
-//     if(P[2]==254&&P[6]==2) Serial.print("#"); //Ось У управляется
-//    }
-//    if(P[1]==10||P[1]==11) {Serial.print("#"); bPHD2=true; bStellarium=false;} //считаем, что bPHD2 подключен
-//   }
-  if (P[0]==3) //Монтировка, Push (толчки)
-   {
-    if(P[1]==16) //Ось Х
-    {
-     if(P[2]==38&&P[3]==13)  {Force_X(false); Stepper_X_step( iStDX*P[4]); p= 1;} //По Х вправо P[4]*10 ms
-     if(P[2]==38&&P[3]==243) {Force_X(false); Stepper_X_step(-iStDX*P[4]); p=-1;} //По Х влево  P[4]*10 ms
-    }
-    if(P[1]==17) //Ось Y
-    {
-     if(P[2]==38&&P[3]==13)  {Force_Y(false); Stepper_Y_step( iStDY*P[4]); p= 2;} //По Y вверх P[4]*10 ms
-     if(P[2]==38&&P[3]==243) {Force_Y(false); Stepper_Y_step(-iStDY*P[4]); p=-2;} //По Y вниз  P[4]*10 ms
-    }
-   }
-//  if (P[0]==4) {P[2]=39; P[3]=0;} //Остановка монтировки
+ boolean AxisPush=false;
+ String msSTR="";
+ int ims=0;
 
- return p; 
+ msSTR=sSTR.substring(2);
+ ims=msSTR.toInt()/10;   //Допущение, 1 микрошаг приравниваем к Push 10 ms
+
+  if (ims>0) //
+   {
+     if(sSTR.charAt(1)=='W') {Force_X(false); Stepper_X_step( iStDX*ims); AxisPush=true;} //По Х вправо ims*10 ms
+     if(sSTR.charAt(1)=='E') {Force_X(false); Stepper_X_step(-iStDX*ims); AxisPush=true;} //По Х влево  ims*10 ms
+     if(sSTR.charAt(1)=='N') {Force_Y(false); Stepper_Y_step( iStDY*ims); AxisPush=true;} //По Y вверх  ims*10 ms
+     if(sSTR.charAt(1)=='S') {Force_Y(false); Stepper_Y_step(-iStDY*ims); AxisPush=true;} //По Y вниз   ims*10 ms
+   }
+ return AxisPush;
 }
 
 boolean AxisMove(String sSTR)

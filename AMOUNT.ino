@@ -100,7 +100,7 @@ void action(String STRA)
   cAction=STRA.charAt(0);
   switch (cAction)
   {
-    case '?': {Serial.write(0); Serial.write(35); break;}//{Serial.print("1#"); break;}
+    case '?': {Serial.write(35); break;}
     case 'a': {if(bAlignment) Serial.write(1); else Serial.write(0); Serial.write(35); break;}
     case 'A': {if(STRA.charAt(1)==0) bAlignment=false; if(STRA.charAt(1)==1) bAlignment=true; Serial.write(35); break;}
     case 'B': {GetSubStr (); if((STR1.length()==4)&&(STR2.length()==4)) STR=STR1+"0000,"+STR2+"0000";}         
@@ -139,13 +139,8 @@ void action(String STRA)
     case 'N': {if(AxisMove(STRA)) Serial.write(35); break;} // Вверх                
     case 'n': {if(digitalRead(ENABLE_XYZ_PIN)==HIGH) Serial.write(0); if(digitalRead(ENABLE_XYZ_PIN)==LOW) Serial.write(1); Serial.write(35); break;} //Motors disabled/enabled  
 //    case 'N': {if(STRA.charAt(1)==0) digitalWrite(ENABLE_XYZ_PIN, HIGH); if(STRA.charAt(1)==1) digitalWrite(ENABLE_XYZ_PIN, LOW); Serial.write(35); break;} //Motors desable/enable
-    case 'P': {GetSubStr(); iPictures=STR1.toInt(); iExpoz=STR2.toInt(); Serial.write(35); break;}
-    case 't': {Serial.write(iTMode); Serial.write(35); break;}
-    case 'T': {if(STRA.charAt(1)==0) if((iTMode==2)||(iTMode==3)) iSMode=SetSMode(0);
-               if(STRA.charAt(1)>=1&&STRA.charAt(1)<=3) {iTMode=STRA.charAt(1); iSMode=SetSMode(1);}
-               if(iSMode>0) {ulMilisec=millis(); ulLoopTimer= millis();}
-               Serial.write(35); break;}
-
+    case 'O': {GetSubStr(); iPictures=STR1.toInt(); iExpoz=STR2.toInt(); Serial.write(35); break;}
+    case 'P': {if(AxisPush(STRA)) Serial.write(35); break;}
     case 'R': {GetSubStr (); if((STR1.length()==4)&&(STR2.length()==4)) STR=STR1+"0000,"+STR2+"0000";}
     case 'r': {GetSubStr ();
                if(STR1.length()==8&&STR2.length()==8)
@@ -193,12 +188,17 @@ void action(String STRA)
                 Serial.write(35);
                }
                break;}
+    case 't': {Serial.write(iTMode); Serial.write(35); break;}
+    case 'T': {if(STRA.charAt(1)==0) if((iTMode==2)||(iTMode==3)) iSMode=SetSMode(0);
+               if(STRA.charAt(1)>=1&&STRA.charAt(1)<=3) {iTMode=STRA.charAt(1); iSMode=SetSMode(1);}
+               if(iSMode>0) {ulMilisec=millis(); ulLoopTimer= millis();}
+               Serial.write(35); break;}
     case 'V': {Serial.write(1); Serial.write(0); Serial.write(35); break;} //Версия протокола
     case 'v': {Serial.write(4); Serial.write(4); Serial.write(35); break;} //Версия программы (?)
     case 'W': {if(AxisMove(STRA)) Serial.write(35); break;} // Вправо 
-    case 'w': {SendLatLon(); Serial.write(35); break;} //Запрос координат               
+    case 'w': {SendLatLon(); Serial.write(35); break;}      //Запрос координат
+                   
     case 'x': {Serial.print(HexToStr(RaToUL(RaDe.AtX,ulMaxValue),8)); Serial.write(35); break;} // Отдельно координату X передаем
-               
     case 'y': {Serial.print(HexToStr(RaToUL(RaDe.AtY,ulMaxValue),8)); Serial.write(35); break;} // Отдельно координату Y передаем
                              
     case 'Z': {Serial.print(HexToStr(RaToUL(AzAlt.AtX,ulMaxValue)>>16,4)); Serial.print(","); // 
@@ -276,7 +276,7 @@ void loop()
 
  Bytes=GetString();        // Чтение порта
  if(Bytes>0) action(STR);  // Обработка команд порта
- p();                      // Обработка команд Pass-through порта
+// p();                      // Обработка команд Pass-through порта
  ulCtrlStat=AskControl();  // Запрос и обработка состояния элементов управления
     
  lVDMTime  = millis()-ulMilisec;  //Виртуальное время исполнения предыдущего цикла
