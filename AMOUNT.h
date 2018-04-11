@@ -1,8 +1,9 @@
 /*
- ASMOUNT.h Written by Igor Ovchinnikov 07/04/2018
+ ASMOUNT.h Written by Igor Ovchinnikov 11/04/2018
 */
 
-String STR= "", STR1="", STR2="";
+String STR= "", STR1="", STR2=""; //Input Strings
+String CSTR= ""; //Cycle Command String
 
 int  iMJX, iMJY, iMJZ;      //Значения сенсоров Х,У,Z в исходном состоянии
 unsigned long ulCtrlStat=0; //Текущее и предыдущее положение элементов управления
@@ -284,7 +285,6 @@ boolean AxisMove(String sSTR)
   {
     switch (sSTR.charAt(1)) 
      {
-      case '0': {iXYRate=0; Steps=0;   break;}
       case '1': {iXYRate=1; Steps=1;   break;}
       case '2': {iXYRate=2; Steps=2;   break;}
       case '3': {iXYRate=3; Steps=4;   break;}
@@ -294,6 +294,7 @@ boolean AxisMove(String sSTR)
       case '7': {iXYRate=7; Steps=64;  break;}
       case '8': {iXYRate=8; Steps=100; break;}
       case '9': {iXYRate=9; Steps=200; break;}
+      default:  {iXYRate=0; Steps=0;}
      };
    if(Steps!=0)
    {
@@ -311,7 +312,8 @@ boolean AxisMove(String sSTR)
       Stepper_Y_step(Direction*iStDY*Steps);
       AxisMove=true;
      }
-   } 
+   }
+   else {CSTR=""; AxisMove=false;}
   }
  return AxisMove;
 }
@@ -494,9 +496,8 @@ unsigned long AskControl()
    }
    if (iCtrlEnable==3) iXYRate=(iN<0)?(-iN):(iN); //JOYCONTROL
    if(iTMode==2) iN=-iN;
- //  if(iN!=0) {P[0]=2; P[1]=16; P[2]=(iN>0)?36:37; P[3]=iXYRate; P[4]=0; P[5]=0; P[6]=0; p();} else {P[0]=0; p();} // X
-   if(iN >0) {iLastCtrlKey=1; AxisMove("E"+String(iXYRate));}
-   if(iN <0) {iLastCtrlKey=2; AxisMove("W"+String(iXYRate));}
+   if(iN >0) {iLastCtrlKey=1; CSTR=""; AxisMove("E"+String(iXYRate));} //Влево
+   if(iN <0) {iLastCtrlKey=2; CSTR=""; AxisMove("W"+String(iXYRate));} //Вправо
     
   if (iCtrlEnable==0) //GUIDEPORT ось У
    {
@@ -513,9 +514,8 @@ unsigned long AskControl()
     iN=(iA2-iMJY)/iDY;
    }
    if (iCtrlEnable==3) iXYRate=(iN<0)?(-iN):(iN); //JOYCONTROL
-//   if(iN!=0) {P[0]=2; P[1]=17; P[2]=(iN>0)?37:36; P[3]=iXYRate; P[4]=0; P[5]=0; P[6]=0; p();} else {P[0]=0; p();} // Y
-   if(iN >0) {iLastCtrlKey=3; AxisMove("N"+String(iXYRate));}
-   if(iN <0) {iLastCtrlKey=4; AxisMove("S"+String(iXYRate));}
+   if(iN >0) {iLastCtrlKey=3; CSTR=""; AxisMove("N"+String(iXYRate));} //Вверх
+   if(iN <0) {iLastCtrlKey=4; CSTR=""; AxisMove("S"+String(iXYRate));} //Вниз
   
    if((iCtrlEnable==3)&&((millis()-ulCtrlTimer)>iCtrlDelay)) //JOYCONTROL запускает или останавливает трекинг
     {

@@ -1,5 +1,5 @@
 /*
- ASMOUNT.ino File Written by Igor Ovchinnikov 07/04/2018
+ ASMOUNT.ino File Written by Igor Ovchinnikov 11/04/2018
  скетч превращения CNC_v4_Shield в контроллер монтировки
  с собственной системой команд
 */
@@ -55,7 +55,7 @@ int iPictures=0;            //Количество неотснятых кадр
 int iExpoz=0;               //Выдержка сек, если 0 - то минимальная выдержка
 boolean bShutting=false;    //Затвор не включен, фотографирование не запущено
 boolean bStellarium=false;  //Используется прямое подключение к стеллариуму
-boolean bPHD2=true;         //bPHD2 подключен 
+boolean bPHD2=false;        //bPHD2 подключен 
 
 struct RaRa {double AtX; double AtY; double ToX; double ToY; int FLXY;}; //Координаты наведения в радианах
 
@@ -67,10 +67,6 @@ double drLST  = PI;   //Местное звездное время 12h
 double drToTH = PI;   //Целевое значение часового угла
 
 double drFi=Latitude/360.0*drMaxValue; //Широта в радианах
-
-//long lControl=0; //Для AscControl()
-
-// int iSteps = 0;           // Подсчет количества шагов
 
   int iTMode= 0; // Тип монтировки (задаем в сетапе)
 //int iTMode= 1; // Альт-азимутальная монтировка
@@ -120,7 +116,7 @@ void action(String STRA)
     case 'D': {if(STRA.charAt(1)>=0&&STRA.charAt(1)<=3)        //Незадекларированная в протоколе команда установки скорости ведения
                {iSMode=SetSMode(STRA.charAt(1)); if(iSMode>0) {ulMilisec=millis(); ulLoopTimer= millis();}}
                Serial.write(35); break;}                                 
-    case 'E': {if(AxisMove(STRA)) Serial.write(35); break;} // Влево       
+    case 'E': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.write(35);} break;} // Влево       
     case 'e': {Serial.print(HexToStr(RaToUL(RaDe.AtX,ulMaxValue),8)); Serial.print(","); // 
                Serial.print(HexToStr(RaToUL(RaDe.AtY,ulMaxValue),8)); Serial.write(35);  // 
                break;}                
@@ -136,7 +132,7 @@ void action(String STRA)
     case 'M': {if(iTMode==0||iTMode==1) {AzAlt.ToX=AzAlt.AtX; AzAlt.ToY=AzAlt.AtY; AzAlt.FLXY=0;}
                if(iTMode==2||iTMode==3) {RaDe.ToX=RaDe.AtX; RaDe.ToY=RaDe.AtY; RaDe.FLXY=0;}               
                Serial.write(35); break;}           
-    case 'N': {if(AxisMove(STRA)) Serial.write(35); break;} // Вверх                
+    case 'N': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.write(35);} break;} // Вверх                
     case 'n': {if(digitalRead(ENABLE_XYZ_PIN)==HIGH) Serial.write(0); if(digitalRead(ENABLE_XYZ_PIN)==LOW) Serial.write(1); Serial.write(35); break;} //Motors disabled/enabled  
 //    case 'N': {if(STRA.charAt(1)==0) digitalWrite(ENABLE_XYZ_PIN, HIGH); if(STRA.charAt(1)==1) digitalWrite(ENABLE_XYZ_PIN, LOW); Serial.write(35); break;} //Motors desable/enable
     case 'O': {GetSubStr(); iPictures=STR1.toInt(); iExpoz=STR2.toInt(); Serial.write(35); break;}
@@ -164,7 +160,7 @@ void action(String STRA)
                bStellarium=true; //Если поступила команда 'r', считаем, что подключен стеллариум
                bPHD2=false;
                Serial.write(35); break;}
-    case 'S': {if(AxisMove(STRA)) Serial.write(35); break;} // Вниз
+    case 'S': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.write(35);} break;} // Вниз
     case 's': {GetSubStr ();
                if((STR1.length()==8)&&(STR2.length()==8))
                {
@@ -193,9 +189,9 @@ void action(String STRA)
                if(STRA.charAt(1)>=1&&STRA.charAt(1)<=3) {iTMode=STRA.charAt(1); iSMode=SetSMode(1);}
                if(iSMode>0) {ulMilisec=millis(); ulLoopTimer= millis();}
                Serial.write(35); break;}
-    case 'V': {Serial.write(1); Serial.write(0); Serial.write(35); break;} //Версия протокола
-    case 'v': {Serial.write(4); Serial.write(4); Serial.write(35); break;} //Версия программы (?)
-    case 'W': {if(AxisMove(STRA)) Serial.write(35); break;} // Вправо 
+//    case 'V': {Serial.write(1); Serial.write(0); Serial.write(35); break;} //Версия протокола
+//    case 'v': {Serial.write(4); Serial.write(4); Serial.write(35); break;} //Версия программы 
+    case 'W': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.write(35);} break;}     //Вправо 
     case 'w': {SendLatLon(); Serial.write(35); break;}      //Запрос координат
                    
     case 'x': {Serial.print(HexToStr(RaToUL(RaDe.AtX,ulMaxValue),8)); Serial.write(35); break;} // Отдельно координату X передаем
@@ -276,7 +272,7 @@ void loop()
 
  Bytes=GetString();        // Чтение порта
  if(Bytes>0) action(STR);  // Обработка команд порта
-// p();                      // Обработка команд Pass-through порта
+ else action(CSTR);        // Обработка циклических команд
  ulCtrlStat=AskControl();  // Запрос и обработка состояния элементов управления
     
  lVDMTime  = millis()-ulMilisec;  //Виртуальное время исполнения предыдущего цикла
@@ -366,5 +362,5 @@ void loop()
   }
  Shutting();  // Фотографирование
  if(bStellarium) if((millis()-ulPortTimer)>=1000) {action("e"); ulPortTimer=millis();} // Прямое подключение к стеллариуму
- if(bPHD2) if((millis()-ulPortTimer)>=1000) {Serial.write(35); ulPortTimer=millis();} // Прямое подключение к PHD2
+// if(bPHD2) if((millis()-ulPortTimer)>=1000) {Serial.write(35); ulPortTimer=millis();} // Прямое подключение к PHD2
  }
