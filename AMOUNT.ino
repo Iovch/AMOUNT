@@ -1,5 +1,5 @@
 /*
- ASMOUNT.ino File Written by Igor Ovchinnikov 11/04/2018
+ ASMOUNT.ino File Written by Igor Ovchinnikov 24/04/2018
  скетч превращения CNC_v4_Shield в контроллер монтировки
  с собственной системой команд
 */
@@ -96,49 +96,63 @@ void action(String STRA)
   cAction=STRA.charAt(0);
   switch (cAction)
   {
-    case '?': {Serial.write(35); break;}
-    case 'a': {if(bAlignment) Serial.write(1); else Serial.write(0); Serial.write(35); break;}
-    case 'A': {if(STRA.charAt(1)==0) bAlignment=false; if(STRA.charAt(1)==1) bAlignment=true; Serial.write(35); break;}
-    case 'B': {GetSubStr (); if((STR1.length()==4)&&(STR2.length()==4)) STR=STR1+"0000,"+STR2+"0000";}         
-    case 'b': {GetSubStr ();
-               if(STR1.length()==8&&STR2.length()==8)
-               {
-                if (iTMode==0||iTMode==1) //Азимутальный режим
-                 {
-                  AzAlt.ToX=ULToRa(StrToHEX(STR1),ulMaxValue);
-                  AzAlt.ToY=ULToRa(StrToHEX(STR2),ulMaxValue);
-                  if (bAlignment) {ulLoopTimer= millis(); ToAZaH(true);}
-                  else {AzAlt.AtX=AzAlt.ToX; AzAlt.AtY=AzAlt.ToY; bAlignment=true;}
-                 }
-                Serial.write(35);}
-                break;}
-    case 'd': {Serial.write(iSMode); Serial.write(35); break;} //Незадекларированная в протоколе команда запроса скорости ведения
-    case 'D': {if(STRA.charAt(1)>=0&&STRA.charAt(1)<=3)        //Незадекларированная в протоколе команда установки скорости ведения
-               {iSMode=SetSMode(STRA.charAt(1)); if(iSMode>0) {ulMilisec=millis(); ulLoopTimer= millis();}}
-               Serial.write(35); break;}                                 
-    case 'E': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.write(35);} break;} // Влево       
-    case 'e': {Serial.print(HexToStr(RaToUL(RaDe.AtX,ulMaxValue),8)); Serial.print(","); // 
-               Serial.print(HexToStr(RaToUL(RaDe.AtY,ulMaxValue),8)); Serial.write(35);  // 
+    case '?': {Serial.print('#'); break;} //Проверка работоспособности монтировки
+    
+    case '>': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.print('#');} break;} //Вправо
+    case '<': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.print('#');} break;} //Влево
+    case '^': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.print('#');} break;} //Вверх
+    case 'V': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.print('#');} break;} //Вниз
+    
+    case 'a': {if(bAlignment) Serial.print('1'); else Serial.print('0'); Serial.print('#'); break;} //Запрос привязана ли монтировка к текущим координатам
+    case 'A': {if(STRA.charAt(1)=='0') bAlignment=false; if(STRA.charAt(1)=='1') bAlignment=true; Serial.print('#'); break;} //Принудительная привязка к текущим координатам
+//    case 'B': {GetSubStr (); if((STR1.length()==4)&&(STR2.length()==4)) STR=STR1+"0000,"+STR2+"0000";}         
+//    case 'b': {GetSubStr ();
+//               if(STR1.length()==8&&STR2.length()==8)
+//               {
+//                if (iTMode==0||iTMode==1) //Азимутальный режим
+//                 {
+//                  AzAlt.ToX=ULToRa(StrToHEX(STR1),ulMaxValue);
+//                  AzAlt.ToY=ULToRa(StrToHEX(STR2),ulMaxValue);
+//                  if (bAlignment) {ulLoopTimer= millis(); ToAZaH(true);}
+//                  else {AzAlt.AtX=AzAlt.ToX; AzAlt.AtY=AzAlt.ToY; bAlignment=true;}
+//                 }
+//                Serial.write(35);}
+//                break;}
+    case 'd': {Serial.print(GetDate()+'#'); break;}                      //Передача даты
+    case 'D': {if(SetDate(STRA.substring(1))) Serial.print('#'); break;} //Установка даты
+    
+    case 'e': {Serial.print(HexToStr(RaToUL(RaDe.AtX,ulMaxValue),8)); Serial.print(","); //Сохраненная для Стеллариума команда NexStar
+               Serial.print(HexToStr(RaToUL(RaDe.AtY,ulMaxValue),8)); Serial.print('#'); //запрос текущих экваториальных координат
                break;}                
-    case 'F': {if(Focus(STRA)) Serial.write(35); break;}
+    case 'F': {if(Focus(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.print('#');} break;}
+    
     case 'G': {if(Debug) {Debug=false; Serial.print("UnDebug#");} else {Debug=true; Serial.print("Debug#");} break;}
-    case 'H': {SetTime();    Serial.write(35); break;} //Установка времени
-    case 'h': {SendTime();   Serial.write(35); break;} //Запрос времени
-    case 'K': {Serial.print(STRA.charAt(1)); Serial.write(35); break;}
-    case 'J': {if(bAlignment) Serial.write(1); else Serial.write(0); Serial.write(35); break;} //только для аскома, if(bAlignment) должно быть
-    case 'L': {if (((iTMode==0||iTMode==1)&&AzAlt.FLXY==0)||((iTMode==2||iTMode==3)&&(RaDe.FLXY==0))) Serial.print("0#");
-               else Serial.print("1#");  break;}
-    case 'm': {Serial.write(7); Serial.write(35); break;} // 6 - Edvanced GT, 7 - SLT
-    case 'M': {if(iTMode==0||iTMode==1) {AzAlt.ToX=AzAlt.AtX; AzAlt.ToY=AzAlt.AtY; AzAlt.FLXY=0;}
-               if(iTMode==2||iTMode==3) {RaDe.ToX=RaDe.AtX; RaDe.ToY=RaDe.AtY; RaDe.FLXY=0;}               
-               Serial.write(35); break;}           
-    case 'N': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.write(35);} break;} // Вверх                
-    case 'n': {if(digitalRead(ENABLE_XYZ_PIN)==HIGH) Serial.write(0); if(digitalRead(ENABLE_XYZ_PIN)==LOW) Serial.write(1); Serial.write(35); break;} //Motors disabled/enabled  
-//    case 'N': {if(STRA.charAt(1)==0) digitalWrite(ENABLE_XYZ_PIN, HIGH); if(STRA.charAt(1)==1) digitalWrite(ENABLE_XYZ_PIN, LOW); Serial.write(35); break;} //Motors desable/enable
-    case 'O': {GetSubStr(); iPictures=STR1.toInt(); iExpoz=STR2.toInt(); Serial.write(35); break;}
-    case 'P': {if(AxisPush(STRA)) Serial.write(35); break;}
-    case 'R': {GetSubStr (); if((STR1.length()==4)&&(STR2.length()==4)) STR=STR1+"0000,"+STR2+"0000";}
-    case 'r': {GetSubStr ();
+    
+//    case 'H': {SetTime();    Serial.write(35); break;} //Установка времени
+//    case 'h': {SendTime();   Serial.write(35); break;} //Запрос времени
+
+    case 'K': {Serial.print(STRA.charAt(1)); Serial.write(35); break;} //ECHO
+
+//    case 'J': {if(bAlignment) Serial.write(1); else Serial.write(0); Serial.write(35); break;} //только для аскома, if(bAlignment) должно быть
+    
+//    case 'L': {if (((iTMode==0||iTMode==1)&&AzAlt.FLXY==0)||((iTMode==2||iTMode==3)&&(RaDe.FLXY==0))) Serial.print("0#");
+//               else Serial.print("1#");  break;}
+    case 'm': {Serial.print(iTMode);   Serial.print('#'); break;}    //Запрос типа монтировки
+    case 'M': {if(STRA.charAt(1)=='0') iTMode=0; //Тип неопределен   //Принудительная установка типа монтировки
+               if(STRA.charAt(1)=='1') iTMode=1; //Альт-Азимутальная
+               if(STRA.charAt(1)=='2') iTMode=2; //Экваториальная Noth
+               if(STRA.charAt(1)=='3') iTMode=3; //Экваториальная South
+               if((iTMode>=0) &&(iTMode<=3)) {ulMilisec=millis(); ulLoopTimer= millis(); Serial.print('#');}
+               break;}          
+          
+    case 'n': {if(digitalRead(ENABLE_XYZ_PIN)==HIGH) Serial.print('0'); if(digitalRead(ENABLE_XYZ_PIN)==LOW) Serial.print('1'); Serial.print('#'); break;} //Motors disabled/enabled  
+    case 'N': {if(STRA.charAt(1)=='0') digitalWrite(ENABLE_XYZ_PIN, HIGH); if(STRA.charAt(1)=='1') digitalWrite(ENABLE_XYZ_PIN, LOW); Serial.print('#'); break;} //Motors desable/enable
+
+    case 'O': {GetSubStr(); iPictures=STR1.toInt(); iExpoz=STR2.toInt(); Serial.print('#'); break;}
+    case 'P': {if(AxisPush(STRA)) Serial.print('#'); break;}
+
+//    case 'R': {GetSubStr (); if((STR1.length()==4)&&(STR2.length()==4)) STR=STR1+"0000,"+STR2+"0000";}
+    case 'r': {GetSubStr (); //Сохраненная для Стеллариума команда NexStar
                if(STR1.length()==8&&STR2.length()==8)
                {
                 if ((iTMode==2)||(iTMode==3)) //Экваториальный режим
@@ -160,49 +174,69 @@ void action(String STRA)
                bStellarium=true; //Если поступила команда 'r', считаем, что подключен стеллариум
                bPHD2=false;
                Serial.write(35); break;}
-    case 'S': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.write(35);} break;} // Вниз
-    case 's': {GetSubStr ();
-               if((STR1.length()==8)&&(STR2.length()==8))
-               {
-                if (iTMode==0||iTMode==1) //Азимутальный режим
-                {
-                 AzAlt.AtX=ULToRa(StrToHEX(STR1),ulMaxValue); AzAlt.ToX=AzAlt.AtX;
-                 AzAlt.AtY=ULToRa(StrToHEX(STR2),ulMaxValue); AzAlt.ToY=AzAlt.AtY;
-                 ulLoopTimer=millis();
-                 RaDeFromAzAlt();
-                 ulMilisec=millis();
-                }
-                if (iTMode==2||iTMode==3) //Экваториальный режим
-                {
-                 RaDe.AtX=ULToRa(StrToHEX(STR1),ulMaxValue); RaDe.ToX=RaDe.AtX;
-                 RaDe.AtY=ULToRa(StrToHEX(STR2),ulMaxValue); RaDe.ToY=RaDe.AtY;
-                 ulMilisec=millis();
-                 AzAltFromRaDe(3);
+
+//    case 's': {GetSubStr ();
+//               if((STR1.length()==8)&&(STR2.length()==8))
+//               {
+//                if (iTMode==0||iTMode==1) //Азимутальный режим
+//                {
+//                 AzAlt.AtX=ULToRa(StrToHEX(STR1),ulMaxValue); AzAlt.ToX=AzAlt.AtX;
+//                 AzAlt.AtY=ULToRa(StrToHEX(STR2),ulMaxValue); AzAlt.ToY=AzAlt.AtY;
 //                 ulLoopTimer=millis();
-                }
-                bAlignment=true;
-                Serial.write(35);
-               }
+//                 RaDeFromAzAlt();
+//                 ulMilisec=millis();
+//                }
+//                if (iTMode==2||iTMode==3) //Экваториальный режим
+//                {
+//                 RaDe.AtX=ULToRa(StrToHEX(STR1),ulMaxValue); RaDe.ToX=RaDe.AtX;
+//                 RaDe.AtY=ULToRa(StrToHEX(STR2),ulMaxValue); RaDe.ToY=RaDe.AtY;
+//                 ulMilisec=millis();
+//                 AzAltFromRaDe(3);
+////                 ulLoopTimer=millis();
+//                }
+//                bAlignment=true;
+//                Serial.write(35);
+//               }
+//               break;}
+    case 's': {Serial.print(iSMode);   Serial.print('#'); break;} //Запрос скорости ведения монтировки
+    case 'S': {if(STRA.charAt(1)=='0') iSMode=SetSMode(0);        //Установка скорости ведения монтировки
+               if(STRA.charAt(1)=='1') iSMode=SetSMode(1);
+               if(STRA.charAt(1)=='2') iSMode=SetSMode(2);
+               if(STRA.charAt(1)=='3') iSMode=SetSMode(3);
+               if((iSMode>0) &&(iSMode<=3)) {ulMilisec=millis(); ulLoopTimer= millis();}
+               if((iSMode>=0)&&(iSMode<=3)) Serial.print('#');
                break;}
-    case 't': {Serial.write(iTMode); Serial.write(35); break;}
-    case 'T': {if(STRA.charAt(1)==0) if((iTMode==2)||(iTMode==3)) iSMode=SetSMode(0);
-               if(STRA.charAt(1)>=1&&STRA.charAt(1)<=3) {iTMode=STRA.charAt(1); iSMode=SetSMode(1);}
-               if(iSMode>0) {ulMilisec=millis(); ulLoopTimer= millis();}
-               Serial.write(35); break;}
+               
+   case 't': {Serial.print(GetTime()+'#'); break;}                      //Передача времени
+   case 'T': {if(SetTime(STRA.substring(1))) Serial.print('#'); break;} //Установка времени              
+                         
 //    case 'V': {Serial.write(1); Serial.write(0); Serial.write(35); break;} //Версия протокола
 //    case 'v': {Serial.write(4); Serial.write(4); Serial.write(35); break;} //Версия программы 
-    case 'W': {if(AxisMove(STRA)) if(CSTR!=STRA) {CSTR=STRA; Serial.write(35);} break;}     //Вправо 
-    case 'w': {SendLatLon(); Serial.write(35); break;}      //Запрос координат
+
+//    case 'w': {SendLatLon(); Serial.write(35); break;}      //Запрос координат
                    
-    case 'x': {Serial.print(HexToStr(RaToUL(RaDe.AtX,ulMaxValue),8)); Serial.write(35); break;} // Отдельно координату X передаем
-    case 'y': {Serial.print(HexToStr(RaToUL(RaDe.AtY,ulMaxValue),8)); Serial.write(35); break;} // Отдельно координату Y передаем
+//    case 'x': {Serial.print(HexToStr(RaToUL(RaDe.AtX,ulMaxValue),8)); Serial.write(35); break;} // Отдельно координату X передаем
+//    case 'y': {Serial.print(HexToStr(RaToUL(RaDe.AtY,ulMaxValue),8)); Serial.write(35); break;} // Отдельно координату Y передаем
+
+    case 'x': {Serial.print((RaDe.AtX/2/PI),7); Serial.print('#'); break;} //Передаем  координату X в долях окружности [0,1]
+    case 'X': {                                                            //Принимаем координату X с переводом в радианы
+               if((iTMode==0)||(iTMode==1)) {AzAlt.AtX=2*PI*StrXYtoRa(STRA); AzAlt.ToX=AzAlt.AtX; Serial.print('#');}
+               if((iTMode==2)||(iTMode==3)) {RaDe.AtX =2*PI*StrXYtoRa(STRA); RaDe.ToX =RaDe.AtX;  Serial.print('#');}
+               break;
+              }
+    case 'y': {Serial.print((RaDe.AtY/2/PI),7); Serial.print('#'); break;} //Передаем  координату Y в долях окружности [0,1]
+    case 'Y': {                                                            //Принимаем координату Y с переводом в радианы  
+               if((iTMode==0)||(iTMode==1)) {AzAlt.AtY=2*PI*StrXYtoRa(STRA); AzAlt.ToY=AzAlt.AtY; Serial.print('#');}
+               if((iTMode==2)||(iTMode==3)) {RaDe.AtY =2*PI*StrXYtoRa(STRA); RaDe.ToY =RaDe.AtY;  Serial.print('#');}
+               break;
+              }
                              
-    case 'Z': {Serial.print(HexToStr(RaToUL(AzAlt.AtX,ulMaxValue)>>16,4)); Serial.print(","); // 
-               Serial.print(HexToStr(RaToUL(AzAlt.AtY,ulMaxValue)>>16,4)); Serial.write(35); // 
-               break;}     
-    case 'z': {Serial.print(HexToStr(RaToUL(AzAlt.AtX,ulMaxValue),8)); Serial.print(","); // 
-               Serial.print(HexToStr(RaToUL(AzAlt.AtY,ulMaxValue),8)); Serial.write(35); //   
-               break;}                              
+//    case 'Z': {Serial.print(HexToStr(RaToUL(AzAlt.AtX,ulMaxValue)>>16,4)); Serial.print(","); // 
+//               Serial.print(HexToStr(RaToUL(AzAlt.AtY,ulMaxValue)>>16,4)); Serial.write(35); // 
+//               break;}     
+//    case 'z': {Serial.print(HexToStr(RaToUL(AzAlt.AtX,ulMaxValue),8)); Serial.print(","); // 
+//               Serial.print(HexToStr(RaToUL(AzAlt.AtY,ulMaxValue),8)); Serial.write(35); //   
+//               break;}                              
   };
 }
 

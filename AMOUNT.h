@@ -1,5 +1,5 @@
 /*
- ASMOUNT.h Written by Igor Ovchinnikov 11/04/2018
+ ASMOUNT.h Written by Igor Ovchinnikov 28/04/2018
 */
 
 String STR= "", STR1="", STR2=""; //Input Strings
@@ -27,6 +27,13 @@ double ULToRa (unsigned long Value, unsigned long MaxValue) //Перевод uns
    long double D2=MaxValue>>8;
    return D1/D2*drMaxValue;
  }
+
+double StrXYtoRa (String STR)
+{
+  double StrXYtoRa;
+  StrXYtoRa=STR.substring(1).toFloat();
+  return StrXYtoRa;
+}
 
 void SetLatLon(void)
 {
@@ -254,21 +261,21 @@ String HexToStr (unsigned long ulpHex, int iDigits)
  return HexStr;
 }
 
-boolean AxisPush(String sSTR) //Строка типа "PE200" - Push East 200 ms
+boolean AxisPush(String sSTR) //Строка типа "P>5" - толчек вправо 5 микрошагов 
 {
  boolean AxisPush=false;
  String msSTR="";
  int ims=0;
 
  msSTR=sSTR.substring(2);
- ims=msSTR.toInt()/10;   //Допущение, 1 микрошаг приравниваем к Push 10 ms
+ ims=msSTR.toInt();
 
   if (ims>0) //
    {
-     if(sSTR.charAt(1)=='W') {Force_X(false); Stepper_X_step( iStDX*ims); AxisPush=true;} //По Х вправо ims*10 ms
-     if(sSTR.charAt(1)=='E') {Force_X(false); Stepper_X_step(-iStDX*ims); AxisPush=true;} //По Х влево  ims*10 ms
-     if(sSTR.charAt(1)=='N') {Force_Y(false); Stepper_Y_step( iStDY*ims); AxisPush=true;} //По Y вверх  ims*10 ms
-     if(sSTR.charAt(1)=='S') {Force_Y(false); Stepper_Y_step(-iStDY*ims); AxisPush=true;} //По Y вниз   ims*10 ms
+     if(sSTR.charAt(1)=='>') {Force_X(false); Stepper_X_step( iStDX*ims); AxisPush=true;} //По Х вправо ims*10 ms
+     if(sSTR.charAt(1)=='<') {Force_X(false); Stepper_X_step(-iStDX*ims); AxisPush=true;} //По Х влево  ims*10 ms
+     if(sSTR.charAt(1)=='^') {Force_Y(false); Stepper_Y_step( iStDY*ims); AxisPush=true;} //По Y вверх  ims*10 ms
+     if(sSTR.charAt(1)=='V') {Force_Y(false); Stepper_Y_step(-iStDY*ims); AxisPush=true;} //По Y вниз   ims*10 ms
    }
  return AxisPush;
 }
@@ -277,10 +284,10 @@ boolean AxisMove(String sSTR)
 {
   boolean AxisMove=false;
   int Axis=0, Direction=0, Steps=0;
-  if (sSTR.charAt(0)=='W') {Axis=1; Direction=-1;}
-  if (sSTR.charAt(0)=='E') {Axis=1; Direction= 1;}
-  if (sSTR.charAt(0)=='N') {Axis=2; Direction= 1;}
-  if (sSTR.charAt(0)=='S') {Axis=2; Direction=-1;}
+  if (sSTR.charAt(0)=='>') {Axis=1; Direction=-1;} //Вправо
+  if (sSTR.charAt(0)=='<') {Axis=1; Direction= 1;} //Влево
+  if (sSTR.charAt(0)=='^') {Axis=2; Direction= 1;} //Вверх
+  if (sSTR.charAt(0)=='V') {Axis=2; Direction=-1;} //Вниз
   if (Direction!=0)
   {
     switch (sSTR.charAt(1)) 
@@ -345,7 +352,8 @@ boolean Focus(String sSTR)
     if((Steps>=iZStepX)&&(!bForceZ)) {Force_Z(true);  Steps/=iZStepX;} 
     Stepper_Z_step(Direction*iStDZ*Steps);
     Focus=true;
-   } 
+   }
+   else {CSTR=""; Focus=false;} 
   }
   return Focus;
 }

@@ -1,20 +1,42 @@
 /*
-* MTime.h (For Mount) Written by Igor Ovchinnikov 28/09/2017
+* MTime.h (For Mount) Written by Igor Ovchinnikov 23/04/2018
 */
 
 struct sDateTime {int SS; int MM; int HH; int DD; int MH; int YY; unsigned long MS;} sDT;
 
-void SetTime(void)
+bool SetDate(String STR)
 {
-  sDT.HH=H[0];
-  sDT.MM=H[1];
-  sDT.SS=H[2];
-  sDT.MH=H[3];
-  sDT.DD=H[4];
-  sDT.YY=H[5];
-  if(H[6]<=12) iZH=H[6]; else iZH=-(256-H[6]);
-  if(H[7]==1)  sDT.HH+=12;
-  sDT.MS=millis();
+  bool SetDate=false;
+  String SubSTR="";
+  if(STR.length()==6)
+  {
+   SubSTR=STR.substring(0,2);
+   sDT.YY=SubSTR.toInt();
+   SubSTR=STR.substring(2,4);
+   sDT.MH=SubSTR.toInt();
+   SubSTR=STR.substring(4,6);
+   sDT.DD=SubSTR.toInt();
+   SetDate=true;
+  }
+ return SetDate;
+}
+
+bool SetTime(String STR)
+{
+  bool SetTime=false;
+  String SubSTR="";
+  if(STR.length()==6)
+  {
+   SubSTR=STR.substring(0,2);
+   sDT.HH=SubSTR.toInt();
+   SubSTR=STR.substring(2,4);
+   sDT.MM=SubSTR.toInt();
+   SubSTR=STR.substring(4,6);
+   sDT.SS=SubSTR.toInt();
+   sDT.MS=millis();
+   SetTime=true;
+  }
+ return SetTime;
 }
 
 void AskClock(void) // Заполняет структуру sDT данными о текущем времени
@@ -37,18 +59,29 @@ void AskClock(void) // Заполняет структуру sDT данными 
    }
 }
 
-void SendTime(void)
+String GetTime(void)
 {
- // Serial.flush();
+  String GetTime="";
   AskClock();
-  H[0]=sDT.HH;
-  H[1]=sDT.MM;
-  H[2]=sDT.SS;
-  H[3]=sDT.MH;
-  H[4]=sDT.DD;
-  H[5]=sDT.YY;
-  if(iZH<0) H[6]=256-iZH; else H[6]=iZH;
-  H[7]==0;
-  Serial.write(H,8);
+  if(sDT.HH<10) GetTime+="0";
+  GetTime+=String(sDT.HH);
+  if(sDT.MM<10) GetTime+="0";
+  GetTime+=String(sDT.MM);
+  if(sDT.SS<10) GetTime+="0";
+  GetTime+=String(sDT.SS);
+  return GetTime;
+}
+
+String GetDate(void)
+{
+  String GetDate="";
+  AskClock();
+  if(sDT.YY<10) GetDate+="0";
+  GetDate+=String(sDT.YY);
+  if(sDT.MH<10) GetDate+="0";
+  GetDate+=String(sDT.MH);
+  if(sDT.DD<10) GetDate+="0";
+  GetDate+=String(sDT.DD);
+  return GetDate;
 }
 
